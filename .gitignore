@@ -1,4 +1,8 @@
-# 白名單模式:預設忽略所有檔案,只追蹤明確列出的
-*
-!detect_au.py
-!.gitignore
+# 環境與快取
+.venv/
+__pycache__/
+*.pyc
+
+# 輸入影像與產出結果不進版控
+data/
+output/

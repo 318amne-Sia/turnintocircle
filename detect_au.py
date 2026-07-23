@@ -1,7 +1,7 @@
 """Au 顆粒偵測工具 —— 整合 steps/ 學到的完整管線
 
-流程:讀圖 → Otsu 二值化 → 形態學清理 → 遮比例尺 → 找輪廓 → 面積過濾
-      → 貪婪圓形填充(供 FDTD 建模)
+流程:讀圖 → 量比例尺校正 nm/px → 裁掉底部比例尺橫排 → Otsu 二值化
+      → 形態學清理 → 找輪廓 → 面積過濾 → 貪婪圓形填充(供 FDTD 建模)
 輸出:每張圖
   <原檔名>_contours.png  輪廓標註圖
   <原檔名>_circles.png   拼圓標註圖
@@ -34,13 +34,6 @@ def build_mask(img, kernel_size=5):
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-    return mask
-
-
-def mask_scalebar(mask, width, height):
-    """把左下角比例尺區域塗黑,排除在偵測之外(step5)"""
-    if width > 0 and height > 0:
-        mask[-height:, :width] = 0
     return mask
 
 
@@ -144,6 +137,27 @@ def annotate_circles(img, circles):
     return canvas
 
 
+def particle_rows(image_name, particles):
+    """組 particles.csv 的資料列(CLI 與 UI 共用)"""
+    return [{"image": image_name, "particle_id": i, **measure(c)}
+            for i, c in enumerate(particles, start=1)]
+
+
+def circle_rows(image_name, circles, nm_per_px):
+    """組 circles.csv 的資料列:FDTD 用圓形清單,原點 = 影像左上角, y 向下, 單位 nm"""
+    return [{
+        "image": image_name,
+        "island_id": iid,
+        "circle_id": i,
+        "x_nm": round(cx * nm_per_px, 2),
+        "y_nm": round(cy * nm_per_px, 2),
+        "diameter_nm": round(2 * r * nm_per_px, 2),
+        "x_px": cx,
+        "y_px": cy,
+        "radius_px": round(r, 2),
+    } for i, (iid, cx, cy, r) in enumerate(circles, start=1)]
+
+
 def process_image(path, out_dir, args):
     """處理一張圖,回傳 (顆粒統計列, 圓形清單列)"""
     img = load_grayscale(path)
@@ -153,7 +167,12 @@ def process_image(path, out_dir, args):
     if not nm_per_px:
         raise SystemExit(f"{path.name}: 量不到比例尺,請用 --nm-per-px 手動指定校正值")
 
-    mask = mask_scalebar(build_mask(img), *args.scalebar)
+    # 直接裁掉底部含比例尺的整條橫排:FDTD 幾何保持完整矩形,不會缺左下角
+    crop_h = args.scalebar[1]
+    if crop_h:
+        img = img[:-crop_h, :]
+
+    mask = build_mask(img)
     particles = find_particles(mask, args.min_area)
 
     out_png = out_dir / f"{path.stem}_contours.png"
@@ -166,23 +185,10 @@ def process_image(path, out_dir, args):
     cv2.imwrite(str(out_dir / f"{path.stem}_circles.png"), annotate_circles(img, circles))
 
     print(f"{path.name}: {len(particles)} 個島, 拼出 {len(circles)} 顆圓 "
-          f"(覆蓋率 {coverage_of(circles, mask):.1%}, 1px = {nm_per_px:.4f} nm) → {out_png}")
+          f"(覆蓋率 {coverage_of(circles, mask):.1%}, 1px = {nm_per_px:.4f} nm, "
+          f"輸出範圍 {img.shape[1]}x{img.shape[0]} px) → {out_png}")
 
-    particle_rows = [{"image": path.name, "particle_id": i, **measure(c)}
-                     for i, c in enumerate(particles, start=1)]
-    # FDTD 用的圓形清單:座標原點 = 影像左上角, y 向下, 單位 nm
-    circle_rows = [{
-        "image": path.name,
-        "island_id": iid,
-        "circle_id": i,
-        "x_nm": round(cx * nm_per_px, 2),
-        "y_nm": round(cy * nm_per_px, 2),
-        "diameter_nm": round(2 * r * nm_per_px, 2),
-        "x_px": cx,
-        "y_px": cy,
-        "radius_px": round(r, 2),
-    } for i, (iid, cx, cy, r) in enumerate(circles, start=1)]
-    return particle_rows, circle_rows
+    return particle_rows(path.name, particles), circle_rows(path.name, circles, nm_per_px)
 
 
 def main():
@@ -193,7 +199,8 @@ def main():
                         help="最小顆粒面積 px²,小於此值視為雜訊(預設 100)")
     parser.add_argument("--scalebar", type=int, nargs=2, default=[420, 160],
                         metavar=("W", "H"),
-                        help="左下角比例尺遮蔽區域的寬高,0 0 表示不遮(預設 420 160)")
+                        help="比例尺區域寬高:W×H 內量測 nm/px,底部高 H 的整條橫排"
+                             "會被裁掉,0 0 表示不裁(預設 420 160)")
     parser.add_argument("--scalebar-nm", type=float, default=50,
                         help="比例尺標示的實際長度 nm,用於自動校正(預設 50)")
     parser.add_argument("--nm-per-px", type=float, default=None,

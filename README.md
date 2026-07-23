@@ -17,7 +17,7 @@ TEM(穿透式電子顯微鏡)影像的 Au 奈米顆粒偵測工具:自動偵測�
 需要 Python 3.10 以上(開發環境為 3.11.7)。
 
 ```bash
-git clone https://github.com/Defusionstudio/turnintocircle.git
+git clone https://github.com/318amne-Sia/turnintocircle.git
 cd turnintocircle
 python -m venv .venv
 .venv\Scripts\pip install -r requirements.txt      # Windows

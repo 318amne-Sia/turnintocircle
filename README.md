@@ -7,9 +7,11 @@ TEM(穿透式電子顯微鏡)影像的 Au 奈米顆粒偵測工具:自動偵測�
 ## 線上試用
 
 不用安裝任何東西,直接開瀏覽器使用:
-**https://turnintocircle.streamlit.app**
 
-<!-- ↑ 部署完成後把這行網址換成 Streamlit 給你的實際位址 -->
+**https://turnintocircle-avbjpdhgmiygpwiaxottrj.streamlit.app**
+
+上傳 TEM 影像 → 按「開始偵測」→ 下載 `circles.csv`。
+閒置一段時間後 app 會休眠,第一次開啟可能要等約 30 秒喚醒。
 
 想在自己電腦上跑(影像不外傳)請看下面的安裝說明。
 

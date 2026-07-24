@@ -1,5 +1,4 @@
 numpy
 Pillow
-opencv-python
-matplotlib
-gradio
+opencv-python-headless
+streamlit

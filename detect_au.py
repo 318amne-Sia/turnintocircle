@@ -8,10 +8,10 @@
   加上彙整的 particles.csv(顆粒統計)與 circles.csv(FDTD 用圓形清單, nm 單位)
 
 用法(從專案根目錄執行):
-  .venv\\Scripts\\python.exe detect_au.py data                # 處理整個資料夾
-  .venv\\Scripts\\python.exe detect_au.py data\\xxx.tif       # 處理單張
-  .venv\\Scripts\\python.exe detect_au.py data --min-area 200 # 調整過濾參數
-  .venv\\Scripts\\python.exe detect_au.py data --min-diameter 5 --erase-ratio 0.7
+  .venv/bin/python detect_au.py data                # 處理整個資料夾
+  .venv/bin/python detect_au.py data/xxx.tif        # 處理單張
+  .venv/bin/python detect_au.py data --min-area 200 # 調整過濾參數
+  .venv/bin/python detect_au.py data --min-diameter 5 --erase-ratio 0.7
 """
 import argparse
 import csv

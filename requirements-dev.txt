@@ -1,0 +1,4 @@
+# 只有 steps/ 的學習腳本需要(用來畫直方圖);正式的 app 與 CLI 都用不到,
+# 所以不放進 requirements.txt —— 免得 Streamlit Cloud 每次部署都多裝一份。
+# 安裝:.venv/bin/pip install -r requirements-dev.txt
+matplotlib

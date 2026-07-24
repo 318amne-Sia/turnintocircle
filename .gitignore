@@ -3,6 +3,13 @@
 __pycache__/
 *.pyc
 
+# macOS Finder 產生的雜訊
+.DS_Store
+
 # 輸入影像與產出結果不進版控
 data/
 output/
+
+# 注意:steps/ 曾被列在這裡,但那 6 支腳本其實是已追蹤的檔案 ——
+# 對已追蹤檔案而言 .gitignore 是無效的,那行只會讓遵守 gitignore 的
+# 搜尋工具(ripgrep、VSCode 全域搜尋)靜默跳過整個目錄,反而製造盲點。

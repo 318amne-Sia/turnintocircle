@@ -11,7 +11,7 @@ An image-organization tool for TEM (transmission electron microscopy) micrograph
 - `detect_au.py` — the main tool: full detection pipeline (scalebar calibration → bottom-strip crop → Otsu threshold → morphology cleanup → contour finding → area filter → greedy circle packing), CLI with argparse. Outputs per image: annotated `<stem>_contours.png` and `<stem>_circles.png`; combined `particles.csv` (area, perimeter, circularity, centroid) and `circles.csv` (circle positions/diameters in nm, for FDTD simulation input).
 - `streamlit_app.py` — Streamlit web UI over the same pipeline (imports the functions from `detect_au.py`; CSV row-building is shared via `particle_rows`/`circle_rows`). Exposes min-diameter, overlap toggle (default OFF in the UI — the CLI default allows overlap), min-area, and a manual nm/px override for images without a scalebar; everything else uses defaults. UI display name: "TurnIntoCircle". Same crop behavior as the CLI, but the strip height auto-scales with image size (160 px at 2048²). Two Streamlit-specific details: results are stashed in `st.session_state` (a download-button click reruns the script and would otherwise blank the page), and the uploaded file is `seek(0)`-ed before reading (the stream sits at EOF after a rerun). The uploaded file object is passed straight to `load_grayscale` — PIL accepts file-like objects, so no temp file is needed. A Gradio version of this UI (`app.py`) existed until the Streamlit switch; recover it from commit a4d97b0 if ever needed.
 - `data/` — input TEM images (the reference TIF lives here)
-- `steps/` — numbered learning scripts (`step1_load.py` ... `step5_contours.py`) that build up the pipeline one concept at a time; the user is learning image processing step by step, so keep these small and well-commented (Traditional Chinese comments). `detect_au.py` is the consolidated version — new features go there, steps/ stays as the learning record.
+- `steps/` — numbered learning scripts (`step1_load.py` ... `step6_circles.py`) that build up the pipeline one concept at a time; the user is learning image processing step by step, so keep these small and well-commented (Traditional Chinese comments). `detect_au.py` is the consolidated version — new features go there, steps/ stays as the learning record. **`step2_histogram.py` imports matplotlib** — the only thing in the repo that does, which is why matplotlib lives in `requirements-dev.txt` and not `requirements.txt`. These scripts also need images in `data/` to run at all.
 - `output/` — generated images/results, gitignored
 - Run scripts from the repo root: paths inside scripts are relative to the root
 
@@ -38,7 +38,12 @@ An image-organization tool for TEM (transmission electron microscopy) micrograph
 - Always use the project venv at `.venv/`, never the system Python: `.venv/bin/python`
 - Dependencies are listed in `requirements.txt` (numpy, Pillow, opencv-python-headless, streamlit); the venv is gitignored — rebuild with `/opt/homebrew/bin/python3.13 -m venv .venv` then `.venv/bin/python -m pip install -r requirements.txt`
 - Verified end-to-end on OpenCV 5.0.0, numpy 2.5.1, Streamlit 1.60.0 (2026-07). OpenCV 5 did not break any call this pipeline uses (`findContours` still returns a 2-tuple, `distanceTransform`/`minMaxLoc`/`moments` unchanged).
+- `requirements-dev.txt` holds matplotlib, needed only by `steps/`. Keep it out of `requirements.txt` so Streamlit Community Cloud doesn't install it on every deploy.
 - Use `opencv-python-headless`, not `opencv-python` — the Streamlit Community Cloud container has no `libGL`, and nothing in the codebase calls `cv2.imshow`/`waitKey`
+
+## Searching this repo
+
+`grep`/`rg` here honour `.gitignore`, so a recursive search **silently skips ignored paths** — `data/` and `output/` are ignored. When checking a claim like "nothing uses library X", confirm with an explicit path glob (`grep steps/*.py`) before concluding, or the absent hit may just be an unsearched directory. This exact trap produced a wrong "matplotlib is unused" conclusion once; `steps/` was listed in `.gitignore` at the time despite its files being tracked.
 
 ## Deployment
 
